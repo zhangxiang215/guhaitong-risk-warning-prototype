@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>业务管理中台 - 风险提醒</title>
+<style>
+  :root{
+    --primary:#0052d9;
+    --primary-hover:#266fe8;
+    --primary-light:#ecf2fe;
+    --danger:#d54941;
+    --danger-light:#fdecec;
+    --warning:#e37318;
+    --warning-light:#fef3e6;
+    --success:#2ba471;
+    --success-light:#e3f9ef;
+    --text-1:#18191c;
+    --text-2:#4e5969;
+    --text-3:#8a9099;
+    --border:#e3e6eb;
+    --bg:#f3f5f8;
+    --card:#ffffff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+    font-size:14px;color:var(--text-1);background:var(--bg);
+    -webkit-font-smoothing:antialiased;
+  }
+  /* ===== 整体布局 ===== */
+  .app{display:flex;flex-direction:column;height:100vh;}
+  /* 顶栏 */
+  .topbar{
+    height:56px;background:#fff;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0;
+  }
+  .topbar-left{display:flex;align-items:center;gap:12px;}
+  .logo-mark{
+    width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#0052d9,#3d7fff);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:15px;
+  }
+  .logo-name{font-size:16px;font-weight:600;}
+  .logo-sub{font-size:12px;color:var(--text-3);margin-left:2px;}
+  .topbar-right{display:flex;align-items:center;gap:20px;}
+  .icon-btn{
+    position:relative;width:36px;height:36px;border-radius:8px;border:1px solid var(--border);
+    background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-2);
+  }
+  .icon-btn:hover{border-color:var(--primary);color:var(--primary);}
+  .badge-dot{
+    position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;border-radius:9px;
+    background:var(--danger);color:#fff;font-size:11px;line-height:18px;text-align:center;padding:0 4px;
+  }
+  .user-chip{display:flex;align-items:center;gap:10px;cursor:default;}
+  .avatar{
+    width:32px;height:32px;border-radius:50%;background:var(--primary-light);color:var(--primary);
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;
+  }
+  .user-name{font-size:14px;font-weight:500;}
+  .user-role{font-size:12px;color:var(--text-3);}
+  /* 主体 */
+  .main{flex:1;display:flex;overflow:hidden;}
+  .sidebar{
+    width:200px;background:#fff;border-right:1px solid var(--border);
+    padding:12px 8px;flex-shrink:0;overflow-y:auto;
+  }
+  .nav-item{
+    display:flex;align-items:center;gap:10px;height:40px;padding:0 14px;border-radius:8px;
+    color:var(--text-2);cursor:pointer;margin-bottom:2px;font-size:14px;user-select:none;
+  }
+  .nav-item svg{width:16px;height:16px;flex-shrink:0;}
+  .nav-item:hover{background:#f5f7fa;color:var(--text-1);}
+  .nav-item.active{background:var(--primary-light);color:var(--primary);font-weight:600;}
+  .nav-group{font-size:12px;color:var(--text-3);padding:14px 14px 6px;}
+  .content{flex:1;overflow-y:auto;padding:20px 24px;}
+  /* ===== 页面卡片 ===== */
+  .page-card{background:var(--card);border-radius:10px;border:1px solid var(--border);}
+  .page-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 20px;border-bottom:1px solid var(--border);
+  }
+  .page-title{font-size:16px;font-weight:600;display:flex;align-items:center;gap:10px;}
+  .count-tag{
+    font-size:12px;font-weight:400;color:var(--danger);background:var(--danger-light);
+    border-radius:4px;padding:2px 8px;
+  }
+  /* 筛选区 */
+  .filter-bar{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);}
+  .filter-item{display:flex;align-items:center;gap:8px;}
+  .filter-label{color:var(--text-2);font-size:13px;white-space:nowrap;}
+  .sel,.inp{
+    height:32px;border:1px solid var(--border);border-radius:6px;background:#fff;
+    font-size:13px;color:var(--text-1);padding:0 10px;outline:none;font-family:inherit;
+  }
+  .sel{min-width:110px;cursor:pointer;appearance:auto;}
+  .inp{width:120px;}
+  .inp:focus,.sel:focus{border-color:var(--primary);}
+  .date-sep{color:var(--text-3);}
+  .btn{
+    height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--border);background:#fff;
+    font-size:13px;color:var(--text-2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit;
+  }
+  .btn:hover{color:var(--primary);border-color:var(--primary);}
+  .btn-primary{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-hover);border-color:var(--primary-hover);color:#fff;}
+  .filter-actions{margin-left:auto;display:flex;gap:10px;align-items:center;}
+  .export-btn{margin-left:12px;}
+  /* 导出菜单 */
+  .export-menu{
+    position:absolute;top:38px;right:0;width:200px;background:#fff;border:1px solid var(--border);
+    border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:6px;z-index:50;
+    display:none;
+  }
+  .export-menu.show{display:block;}
+  .export-menu-item{padding:9px 10px;border-radius:6px;cursor:pointer;display:flex;flex-direction:column;gap:2px;}
+  .export-menu-item:hover:not(.disabled){background:var(--primary-light);}
+  .export-menu-item.disabled{cursor:not-allowed;opacity:.45;}
+  .em-title{font-size:13px;color:var(--text-1);font-weight:500;}
+  .em-desc{font-size:12px;color:var(--text-3);}
+  .em-desc b{color:var(--primary);font-weight:600;}
+  .export-menu-divider{height:1px;background:var(--border);margin:4px 8px;}
+  /* 行复选框 */
+  .row-ck{width:15px;height:15px;accent-color:var(--primary);cursor:pointer;vertical-align:middle;}
+  /* 表格 */
+  table{width:100%;border-collapse:collapse;}
+  thead th{
+    background:#f7f8fa;text-align:left;font-weight:500;color:var(--text-2);
+    padding:10px 14px;font-size:13px;border-bottom:1px solid var(--border);white-space:nowrap;
+  }
+  tbody td{padding:12px 14px;border-bottom:1px solid #f0f2f5;font-size:13px;vertical-align:middle;}
+  tbody tr:hover{background:#f7f9fc;}
+  .risk-content-cell{max-width:340px;}
+  .risk-content-text{
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+    color:var(--text-1);line-height:1.5;cursor:pointer;
+  }
+  .risk-content-text:hover{color:var(--primary);}
+  .risk-content-text mark{background:none;color:var(--danger);font-weight:600;}
+  .hit-word{
+    display:inline-block;font-size:12px;color:var(--danger);background:var(--danger-light);
+    border:1px solid #f5c2c0;border-radius:4px;padding:1px 8px;margin:2px 4px 2px 0;white-space:nowrap;
+  }
+  .risk-type-tag{
+    display:inline-block;font-size:12px;border-radius:4px;padding:2px 8px;white-space:nowrap;
+  }
+  .rt-recommend{color:#8847d1;background:#f3edfb;}
+  .rt-promise{color:var(--warning);background:var(--warning-light);}
+  .rt-contact{color:#0a7ee0;background:#e6f1fd;}
+  .rt-fund{color:#c25790;background:#faeef5;}
+  .rt-speech{color:#5a616a;background:#eef0f3;}
+  .acct-type-tag{
+    display:inline-flex;align-items:center;gap:4px;font-size:12px;border-radius:4px;padding:2px 8px;white-space:nowrap;
+  }
+  .acct-customer{color:var(--primary);background:var(--primary-light);}
+  .acct-staff{color:var(--success);background:var(--success-light);}
+  .acct-info-cell{line-height:1.6;}
+  .acct-info-cell .name{color:var(--text-1);}
+  .acct-info-cell .id{color:var(--text-3);font-size:12px;}
+  .send-state{font-size:12px;white-space:nowrap;}
+  .send-state .blocked{color:var(--danger);}
+  .send-state .sent{color:var(--warning);}
+  .status-tag{
+    display:inline-flex;align-items:center;gap:6px;font-size:12px;border-radius:4px;padding:2px 8px;white-space:nowrap;
+  }
+  .status-tag::before{content:"";width:6px;height:6px;border-radius:50%;}
+  .st-pending{color:var(--danger);background:var(--danger-light);}
+  .st-pending::before{background:var(--danger);}
+  .st-done{color:var(--success);background:var(--success-light);}
+  .st-done::before{background:var(--success);}
+  .op-cell{white-space:nowrap;}
+  .link-btn{
+    background:none;border:none;color:var(--primary);font-size:13px;cursor:pointer;
+    padding:0 6px;font-family:inherit;
+  }
+  .link-btn:hover{text-decoration:underline;}
+  .link-btn:disabled{color:var(--text-3);cursor:not-allowed;text-decoration:none;}
+  .empty-row td{text-align:center;color:var(--text-3);padding:48px 0;}
+  /* 分页 */
+  .pager{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 20px;
+  }
+  .pager-info{color:var(--text-3);font-size:13px;display:flex;align-items:center;gap:8px;}
+  .pager-pages{display:flex;align-items:center;gap:6px;}
+  .pg-btn{
+    min-width:30px;height:30px;border:1px solid var(--border);border-radius:6px;background:#fff;
+    color:var(--text-2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;
+  }
+  .pg-btn:hover:not(:disabled){border-color:var(--primary);color:var(--primary);}
+  .pg-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;}
+  .pg-btn:disabled{color:#c4c9d0;cursor:not-allowed;}
+  .pg-ellipsis{color:var(--text-3);padding:0 2px;}
+  .page-size-sel{margin-left:8px;height:30px;}
+  /* ===== 抽屉 ===== */
+  .mask{
+    position:fixed;inset:0;background:rgba(24,25,28,.45);z-index:100;
+    opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  .mask.show{opacity:1;pointer-events:auto;}
+  .drawer{
+    position:fixed;top:0;right:-720px;width:720px;height:100vh;background:#fff;z-index:101;
+    box-shadow:-8px 0 24px rgba(0,0,0,.08);display:flex;flex-direction:column;
+    transition:right .25s ease;
+  }
+  .drawer.show{right:0;}
+  .drawer-head{
+    height:56px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 20px;border-bottom:1px solid var(--border);flex-shrink:0;
+  }
+  .drawer-title{font-size:16px;font-weight:600;display:flex;align-items:center;gap:10px;}
+  .drawer-close{width:28px;height:28px;border:none;background:none;cursor:pointer;color:var(--text-3);font-size:18px;border-radius:6px;}
+  .drawer-close:hover{background:#f2f3f5;color:var(--text-1);}
+  .drawer-body{flex:1;overflow-y:auto;padding:20px;}
+  .drawer-foot{
+    padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;
+  }
+  .sec{margin-bottom:20px;}
+  .sec-title{
+    font-size:14px;font-weight:600;color:var(--text-1);margin-bottom:12px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .sec-title::before{content:"";width:3px;height:14px;background:var(--primary);border-radius:2px;}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;}
+  .info-item{display:flex;font-size:13px;line-height:1.7;}
+  .info-item .k{color:var(--text-3);width:72px;flex-shrink:0;}
+  .info-item .v{color:var(--text-1);}
+  .kv-row{display:flex;gap:40px;flex-wrap:wrap;font-size:13px;margin-bottom:10px;}
+  .kv-row .k{color:var(--text-3);}
+  .kv-row .v{color:var(--text-1);margin-left:4px;}
+  /* 私聊上下文 */
+  .chat-box{background:#f7f8fa;border:1px solid var(--border);border-radius:8px;padding:16px;}
+  .chat-meta{font-size:12px;color:var(--text-3);margin-bottom:12px;display:flex;gap:16px;}
+  .chat-line{display:flex;gap:10px;margin-bottom:14px;}
+  .chat-line:last-child{margin-bottom:0;}
+  .chat-ava{
+    width:30px;height:30px;border-radius:50%;flex-shrink:0;font-size:12px;
+    display:flex;align-items:center;justify-content:center;font-weight:600;
+  }
+  .ava-customer{background:var(--primary-light);color:var(--primary);}
+  .ava-staff{background:var(--success-light);color:var(--success);}
+  .ava-teacher{background:#f3edfb;color:#8847d1;}
+  .chat-bubble{
+    max-width:520px;background:#fff;border:1px solid var(--border);border-radius:4px 12px 12px 12px;
+    padding:8px 12px;font-size:13px;line-height:1.6;color:var(--text-1);
+  }
+  .chat-who{font-size:12px;color:var(--text-3);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+  .msg-hit{
+    background:var(--danger-light);border-radius:3px;padding:0 3px;color:var(--danger);font-weight:600;
+    border-bottom:1px dashed var(--danger);cursor:help;position:relative;
+  }
+  .msg-flag{
+    display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--danger);
+    border:1px solid #f5c2c0;background:var(--danger-light);border-radius:3px;padding:0 6px;margin-left:6px;
+  }
+  .msg-blocked-note{
+    font-size:12px;color:var(--danger);margin-top:6px;display:flex;align-items:center;gap:4px;
+  }
+  .msg-sent-note{
+    font-size:12px;color:var(--warning);margin-top:6px;display:flex;align-items:center;gap:4px;
+  }
+  /* 处理区 */
+  .handle-box{background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;}
+  .handle-box.done-box{background:#fafcfa;border-color:#d7efe3;}
+  .textarea{
+    width:100%;height:72px;border:1px solid var(--border);border-radius:6px;padding:8px 10px;
+    font-size:13px;font-family:inherit;resize:vertical;outline:none;
+  }
+  .textarea:focus{border-color:var(--primary);}
+  .handle-note-label{font-size:13px;color:var(--text-2);margin:0 0 8px;}
+  .log-list{position:relative;padding-left:0;}
+  .log-item{display:flex;gap:12px;position:relative;padding-bottom:18px;}
+  .log-item:last-child{padding-bottom:0;}
+  .log-item::before{
+    content:"";position:absolute;left:5px;top:16px;bottom:0;width:1px;background:var(--border);
+  }
+  .log-item:last-child::before{display:none;}
+  .log-dot{
+    width:11px;height:11px;border-radius:50%;border:2px solid var(--primary);background:#fff;
+    flex-shrink:0;margin-top:3px;z-index:1;
+  }
+  .log-dot.warn{border-color:var(--warning);}
+  .log-dot.done{border-color:var(--success);}
+  .log-main{font-size:13px;color:var(--text-1);line-height:1.5;}
+  .log-main .op-actor{font-weight:500;}
+  .log-time{font-size:12px;color:var(--text-3);margin-top:2px;}
+  /* ===== 日志弹窗 ===== */
+  .modal{
+    position:fixed;inset:0;z-index:110;display:flex;align-items:center;justify-content:center;
+    opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  .modal.show{opacity:1;pointer-events:auto;}
+  .modal-card{
+    width:560px;max-height:70vh;background:#fff;border-radius:10px;display:flex;flex-direction:column;
+    box-shadow:0 12px 40px rgba(0,0,0,.16);transform:translateY(12px);transition:transform .2s;
+  }
+  .modal.show .modal-card{transform:translateY(0);}
+  /* ===== Toast ===== */
+  .toast{
+    position:fixed;top:24px;left:50%;transform:translate(-50%,-16px);z-index:200;
+    background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 16px;
+    font-size:13px;color:var(--text-1);box-shadow:0 6px 20px rgba(0,0,0,.12);
+    display:flex;align-items:center;gap:8px;opacity:0;pointer-events:none;transition:all .25s;
+  }
+  .toast.show{opacity:1;transform:translate(-50%,0);}
+  .toast .t-ico{width:16px;height:16px;border-radius:50%;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;}
+  .t-ico.ok{background:var(--success);}
+  .t-ico.info{background:var(--primary);}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:#d3d8e0;border-radius:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 顶栏 -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-mark">云</div>
+      <div>
+        <div class="logo-name">综合业务管理平台</div>
+      </div>
+      <span class="logo-sub">钱坤云</span>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" id="bellBtn" title="预警通知">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span class="badge-dot" id="bellBadge">6</span>
+      </button>
+      <div class="user-chip">
+        <div class="avatar">周</div>
+        <div>
+          <div class="user-name">周敏</div>
+          <div class="user-role">圈子私聊负责人</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- 侧边导航 -->
+    <div class="sidebar">
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>工作台</div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.8c3 .3 5.5 2 5.5 4.7"/></svg>用户管理</div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.6 8.6 0 0 1-3.9-.9L3 20l1-4.9a8.4 8.4 0 1 1 17-3.6z"/></svg>私聊管理</div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>圈子管理</div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>内容模版管理</div>
+      <div class="nav-group">风险管理</div>
+      <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2.5 20h19L12 3z"/><path d="M12 10v4"/><path d="M12 17.2v.1"/></svg>风险提醒</div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>敏感词库</div>
+      <div class="nav-group">系统管理</div>
+      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>系统设置</div>
+    </div>
+
+    <!-- 内容区 -->
+    <div class="content">
+      <div class="page-card">
+        <div class="page-head">
+          <div class="page-title">
+            风险提醒
+            <span class="count-tag" id="pendingCountTag">未处理 6</span>
+          </div>
+        </div>
+
+        <!-- 筛选 -->
+        <div class="filter-bar">
+          <div class="filter-item">
+            <span class="filter-label">触发日期</span>
+            <input type="date" class="inp" id="dateStart">
+            <span class="date-sep">至</span>
+            <input type="date" class="inp" id="dateEnd">
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">账号类型</span>
+            <select class="sel" id="filterAcctType">
+              <option value="">全部</option>
+              <option value="customer">客户</option>
+              <option value="staff">员工</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <span class="filter-label">处理状态</span>
+            <select class="sel" id="filterStatus">
+              <option value="">全部</option>
+              <option value="pending">未处理</option>
+              <option value="done">已处理</option>
+            </select>
+          </div>
+          <div class="filter-actions">
+            <button class="btn btn-primary" id="queryBtn">查询</button>
+            <button class="btn" id="resetBtn">重置</button>
+            <div style="display:flex;gap:10px;position:relative;margin-left:2px;">
+              <button class="btn" id="exportBtn">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+                导出
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              </button>
+              <div class="export-menu" id="exportMenu">
+                <div class="export-menu-item" id="exportAllItem">
+                  <span class="em-title">导出全部</span>
+                  <span class="em-desc">当前筛选结果 <b id="exportAllCount">0</b> 条</span>
+                </div>
+                <div class="export-menu-divider"></div>
+                <div class="export-menu-item disabled" id="exportSelItem">
+                  <span class="em-title">导出选中</span>
+                  <span class="em-desc">已勾选 <b id="exportSelCount">0</b> 条</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 列表 -->
+        <table>
+          <thead>
+            <tr>
+              <th style="width:44px;"><input type="checkbox" class="row-ck" id="ckAll" title="全选本页"></th>
+              <th style="width:56px;">序号</th>
+              <th style="width:300px;">风险内容</th>
+              <th>敏感词</th>
+              <th>风险类型</th>
+              <th>账号类型</th>
+              <th style="width:170px;">账号信息</th>
+              <th style="width:150px;">触发时间</th>
+              <th>处理状态</th>
+              <th style="width:130px;">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+
+        <!-- 分页 -->
+        <div class="pager">
+          <div class="pager-info">
+            共 <span id="totalNum">0</span> 条
+            <select class="sel page-size-sel" id="pageSizeSel">
+              <option value="10">10条/页</option>
+              <option value="30" selected>30条/页</option>
+              <option value="50">50条/页</option>
+              <option value="100">100条/页</option>
+            </select>
+          </div>
+          <div class="pager-pages" id="pagerPages"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 遮罩 -->
+<div class="mask" id="mask"></div>
+
+<!-- 风险详情抽屉 -->
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div class="drawer-title">
+      风险详情
+      <span id="detailStatusTag"></span>
+    </div>
+    <button class="drawer-close" id="drawerClose">✕</button>
+  </div>
+  <div class="drawer-body" id="drawerBody"></div>
+  <div class="drawer-foot" id="drawerFoot"></div>
+</div>
+
+<!-- 操作日志弹窗 -->
+<div class="modal" id="logModal">
+  <div class="modal-card">
+    <div class="drawer-head">
+      <div class="drawer-title">操作日志</div>
+      <button class="drawer-close" onclick="closeLogModal()">✕</button>
+    </div>
+    <div class="drawer-body" id="logModalBody"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><span class="t-ico ok" id="toastIco">✓</span><span id="toastText"></span></div>
+
+<script>
+/* ================= 模拟数据 ================= */
+const RISK_TYPES = {
+  recommend:{label:"违规荐股",cls:"rt-recommend"},
+  promise:{label:"承诺收益",cls:"rt-promise"},
+  contact:{label:"联系方式诱导",cls:"rt-contact"},
+  fund:{label:"资金往来诱导",cls:"rt-fund"},
+  speech:{label:"不当言论",cls:"rt-speech"}
+};
+
+const CUSTOMERS = [
+  {name:"陈志强",id:"GHT2026090112",phone:"138****2381",dept:"-"},
+  {name:"李慧敏",id:"GHT2026081207",phone:"159****6632",dept:"-"},
+  {name:"王建国",id:"GHT2026090328",phone:"186****4517",dept:"-"},
+  {name:"赵雅琴",id:"GHT2026070215",phone:"137****8890",dept:"-"},
+  {name:"刘天成",id:"GHT2026090156",phone:"151****2094",dept:"-"},
+  {name:"孙丽华",id:"GHT2026080309",phone:"188****3376",dept:"-"}
+];
+const STAFFS = [
+  {name:"徐文斌",id:"GHT0031",phone:"139****5210",dept:"服务一部"},
+  {name:"何晓芸",id:"GHT0058",phone:"136****7745",dept:"服务二部"},
+  {name:"郭建军",id:"GHT0022",phone:"135****6028",dept:"服务一部"},
+  {name:"林思颖",id:"GHT0076",phone:"187****9143",dept:"服务三部"}
+];
+
+const CUSTOM_MSGS = [
+  {word:"带你操作",type:"recommend",text:"老师你直接|带你操作|吧，我全仓跟你的票，赚了分你三成",ctx:"老师你们公司那个票能不能跟上"},
+  {word:"内幕消息",type:"recommend",text:"有没有|内幕消息|，给我一个代码我马上下单",ctx:"最近行情怎么样"},
+  {word:"稳赚不赔",type:"promise",text:"你之前说的那个票|稳赚不赔|吗？我准备把定期取出来全投进去",ctx:""},
+  {word:"翻倍",type:"promise",text:"跟着买真的能|翻倍|吗？一年翻倍没问题吧",ctx:""},
+  {word:"直接转账",type:"fund",text:"我不想在平台里弄了，我加你个人号，之后我|直接转账|给你帮我操作",ctx:"平台太麻烦了"},
+  {word:"代客理财",type:"fund",text:"能不能帮我做|代客理财|，我把账户密码给你",ctx:""},
+  {word:"加微信",type:"contact",text:"老师你加我|加微信|wxin_8823吧，那边说方便点",ctx:""},
+  {word:"举报",type:"speech",text:"你们就是骗子公司，我要去证监会|举报|你们，把我的钱退回来",ctx:""},
+  {word:"退费",type:"speech",text:"服务根本没用，今天必须给我|退费|，不然我就到处投诉你们",ctx:""},
+  {word:"借钱炒股",type:"fund",text:"我想|借钱炒股|，贷个30万跟老师的组合，你看行不行",ctx:""},
+  {word:"涨停板",type:"recommend",text:"明天有什么票能上|涨停板|？直接说代码就行",ctx:""},
+  {word:"保本收益",type:"promise",text:"你说这个组合有|保本收益|8个点，合同里写吗",ctx:""}
+];
+const STAFF_MSGS = [
+  {word:"稳赚不赔",type:"promise",text:"这个组合跟上节奏，今年做到|稳赚不赔|，年底基本都在20个点以上",ctx:""},
+  {word:"加微信",type:"contact",text:"有什么问题可以|加微信|xiaoxu_0827私聊我，随时回复",ctx:""},
+  {word:"带你操作",type:"recommend",text:"下周开盘我|带你操作|那一波重组预期，先把仓位腾出来",ctx:""},
+  {word:"保本收益",type:"promise",text:"这个产品是|保本收益|的，放心买，最差也有6个点",ctx:""},
+  {word:"直接转账",type:"fund",text:"老客户续费不用走平台，你|直接转账|到我助理那边就行",ctx:""},
+  {word:"QQ群",type:"contact",text:"盘中最快提示在|QQ群|里，群号7782****，今晚八点发入场代码",ctx:""}
+];
+
+function makeRecords(){
+  const list=[];
+  // 客户记录：触发敏感词但内容正常送达，推送预警
+  CUSTOM_MSGS.forEach((m,i)=>{
+    const c=CUSTOMERS[i%CUSTOMERS.length];
+    const day=18-((i*2)%14); // 11月内日期
+    const dd=String(day).padStart(2,"0");
+    list.push({
+      id:"RJ202611"+String(1001+i),
+      acctType:"customer",
+      acct:c,
+      word:m.word,type:m.type,
+      content:m.text.replace("|"+m.word+"|","⟦"+m.word+"⟧"),
+      ctx:m.ctx,
+      sendState:"sent",
+      time:"2026-11-"+dd+" "+(9+(i%9))+":"+(10+(i*7)%50 <10?"0"+(10+(i*7)%50):(10+(i*7)%50))+":23",
+      status: i<6 ? "pending":"done",
+      handler: i<6?null:"周敏",
+      handleTime: i<6?null:"2026-11-"+dd+" 17:0"+(i%5),
+      remark: i<6?null:"已电话核实客户诉求，涉及退费/投诉类已同步服务一部主管跟进。",
+      logs:i<6?[
+        {t:"2026-11-"+dd+" "+(9+(i%9))+":"+(10+(i*7)%50<10?"0"+(10+(i*7)%50):(10+(i*7)%50))+":24",who:"系统",act:"私聊内容触发敏感词「"+m.word+"」，自动生成风险提醒并推送预警",kind:"warn"},
+        {t:"2026-11-"+dd+" 09:35:12",who:"周敏",act:"接收预警通知，查看风险详情",kind:"info"}
+      ]:[
+        {t:"2026-11-"+dd+" "+(9+(i%9))+":"+(10+(i*7)%50<10?"0"+(10+(i*7)%50):(10+(i*7)%50))+":24",who:"系统",act:"私聊内容触发敏感词「"+m.word+"」，自动生成风险提醒并推送预警",kind:"warn"},
+        {t:"2026-11-"+dd+" 17:0"+(i%5),who:"周敏",act:"核实后将该提醒标记为已处理",kind:"done"}
+      ]
+    });
+  });
+  // 员工记录：触发敏感词，内容被拦截不允许发送
+  STAFF_MSGS.forEach((m,i)=>{
+    const s=STAFFS[i%STAFFS.length];
+    const day=17-((i*2)%12);
+    const dd=String(day).padStart(2,"0");
+    const mi=10+i;
+    list.push({
+      id:"RJ202611"+String(1013+i),
+      acctType:"staff",
+      acct:s,
+      word:m.word,type:m.type,
+      content:m.text.replace("|"+m.word+"|","⟦"+m.word+"⟧"),
+      ctx:m.ctx,
+      sendState:"blocked",
+      time:"2026-11-"+dd+" "+(10+(i%7))+":"+(15+(i*9)%40)+":47",
+      status: mi<6 ? "pending":"done",
+      handler: mi<6?null:"周敏",
+      handleTime: mi<6?null:"2026-11-"+dd+" 18:2"+(i%5),
+      remark: mi<6?null:"已约谈该员工，要求整改话术并重新学习合规规范，敏感词话术已拦截未送达客户。",
+      logs:mi<6?[
+        {t:"2026-11-"+dd+" "+(10+(i%7))+":"+(15+(i*9)%40)+":48",who:"系统",act:"员工发言触发敏感词「"+m.word+"」，消息已拦截，生成风险提醒并推送预警",kind:"warn"},
+        {t:"2026-11-"+dd+" 10:40:02",who:"周敏",act:"接收预警通知，查看风险详情",kind:"info"}
+      ]:[
+        {t:"2026-11-"+dd+" "+(10+(i%7))+":"+(15+(i*9)%40)+":48",who:"系统",act:"员工发言触发敏感词「"+m.word+"」，消息已拦截，生成风险提醒并推送预警",kind:"warn"},
+        {t:"2026-11-"+dd+" 18:2"+(i%5),who:"周敏",act:"约谈员工后将该提醒标记为已处理",kind:"done"}
+      ]
+    });
+  });
+  // 按时间倒序
+  return list.sort((a,b)=>b.time.localeCompare(a.time));
+}
+let RECORDS = makeRecords();
+
+/* ================= 状态 ================= */
+let state={dateStart:"",dateEnd:"",acctType:"",status:"",page:1,pageSize:30};
+
+/* ================= 工具 ================= */
+const $=id=>document.getElementById(id);
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function fmtHM(t){
+  const p=t.split(" ")[1]||"";
+  const hm=p.split(":");
+  return hm[0]+":"+hm[1];
+}
+function fmtContent(text){
+  // ⟦词⟧ 高亮
+  return esc(text).replace(/⟦(.*?)⟧/g,'<mark>$1</mark>');
+}
+function toast(msg,ok=true){
+  $("toastText").textContent=msg;
+  $("toastIco").className="t-ico "+(ok?"ok":"info");
+  $("toastIco").textContent=ok?"✓":"i";
+  $("toast").classList.add("show");
+  clearTimeout(window._tt);
+  window._tt=setTimeout(()=>$("toast").classList.remove("show"),2200);
+}
+
+/* ================= 列表渲染 ================= */
+function filtered(){
+  return RECORDS.filter(r=>{
+    if(state.acctType && r.acctType!==state.acctType)return false;
+    if(state.status && r.status!==state.status)return false;
+    const d=r.time.slice(0,10);
+    if(state.dateStart && d<state.dateStart)return false;
+    if(state.dateEnd && d>state.dateEnd)return false;
+    return true;
+  });
+}
+function render(){
+  const list=filtered();
+  const total=list.length;
+  const pages=Math.max(1,Math.ceil(total/state.pageSize));
+  if(state.page>pages)state.page=pages;
+  const start=(state.page-1)*state.pageSize;
+  const rows=list.slice(start,start+state.pageSize);
+
+  $("totalNum").textContent=total;
+  const pending=RECORDS.filter(r=>r.status==="pending").length;
+  $("pendingCountTag").textContent="未处理 "+pending;
+  $("bellBadge").textContent=pending;
+  $("bellBadge").style.display=pending?"":"none";
+
+  const tb=$("tableBody");
+  if(!rows.length){
+    tb.innerHTML='<tr class="empty-row"><td colspan="10">暂无符合条件的数据</td></tr>';
+  }else{
+    tb.innerHTML=rows.map((r,idx)=>{
+      const serial=(state.page-1)*state.pageSize+idx+1;
+      const ck=selected.has(r.id)?'<input type="checkbox" class="row-ck" checked onclick="toggleRow(event,\''+r.id+'\')">':'<input type="checkbox" class="row-ck" onclick="toggleRow(event,\''+r.id+'\')">';
+      const rt=RISK_TYPES[r.type];
+      const acctTag=r.acctType==="customer"
+        ?'<span class="acct-type-tag acct-customer">客户</span>'
+        :'<span class="acct-type-tag acct-staff">员工</span>';
+      const st=r.status==="pending"
+        ?'<span class="status-tag st-pending">未处理</span>'
+        :'<span class="status-tag st-done">已处理</span>';
+      const ops=r.status==="pending"
+        ?'<button class="link-btn" onclick="openDetail(\''+r.id+'\')">处理</button><button class="link-btn" onclick="openLog(\''+r.id+'\')">日志</button>'
+        :'<button class="link-btn" onclick="openDetail(\''+r.id+'\')">详情</button><button class="link-btn" onclick="openLog(\''+r.id+'\')">日志</button>';
+      return '<tr>'+
+        '<td>'+ck+'</td>'+
+        '<td style="color:var(--text-3);">'+serial+'</td>'+
+        '<td class="risk-content-cell"><div class="risk-content-text" onclick="openDetail(\''+r.id+'\')" title="'+esc(r.content)+'">'+fmtContent(r.content)+'</div></td>'+
+        '<td><span class="hit-word">'+esc(r.word)+'</span></td>'+
+        '<td><span class="risk-type-tag '+rt.cls+'">'+rt.label+'</span></td>'+
+        '<td>'+acctTag+'</td>'+
+        '<td class="acct-info-cell"><div class="name">'+esc(r.acct.id)+'</div></td>'+
+        '<td style="color:var(--text-2);font-size:12px;white-space:nowrap;">'+r.time+'</td>'+
+        '<td>'+st+'</td>'+
+        '<td class="op-cell">'+ops+'</td>'+
+      '</tr>';
+    }).join("");
+  }
+  renderPager(pages);
+  syncExport();
+}
+function renderPager(pages){
+  const p=state.page;
+  let html='<button class="pg-btn" '+(p<=1?"disabled":"")+' onclick="goPage('+(p-1)+')">‹</button>';
+  const nums=[];
+  for(let i=1;i<=pages;i++){
+    if(i===1||i===pages||Math.abs(i-p)<=1)nums.push(i);
+  }
+  let last=0;
+  nums.forEach(i=>{
+    if(last&&i-last>1)html+='<span class="pg-ellipsis">…</span>';
+    html+='<button class="pg-btn '+(i===p?"active":"")+'" onclick="goPage('+i+')">'+i+'</button>';
+    last=i;
+  });
+  html+='<button class="pg-btn" '+(p>=pages?"disabled":"")+' onclick="goPage('+(p+1)+')">›</button>';
+  $("pagerPages").innerHTML=html;
+}
+function goPage(p){state.page=p;render();document.querySelector(".content").scrollTop=0;}
+
+/* ================= 勾选与导出 ================= */
+const selected=new Set();
+function toggleRow(e,id){
+  e.stopPropagation();
+  if(selected.has(id))selected.delete(id);else selected.add(id);
+  syncExport();
+  e.target.checked=selected.has(id);
+}
+function toggleRowChecked(id,checked){
+  if(checked)selected.add(id);else selected.delete(id);
+}
+function pageIds(){
+  return filtered().slice((state.page-1)*state.pageSize,state.page*state.pageSize).map(r=>r.id);
+}
+function syncExport(){
+  const total=filtered().length;
+  $("exportAllCount").textContent=total;
+  $("exportSelCount").textContent=selected.size;
+  const selItem=$("exportSelItem");
+  if(selected.size>0)selItem.classList.remove("disabled");
+  else selItem.classList.add("disabled");
+  // 表头全选框状态
+  const ids=pageIds();
+  const selInPage=ids.filter(id=>selected.has(id)).length;
+  const ckAll=$("ckAll");
+  ckAll.checked=ids.length>0&&selInPage===ids.length;
+  ckAll.indeterminate=selInPage>0&&selInPage<ids.length;
+}
+$("ckAll").onchange=e=>{
+  const ids=pageIds();
+  ids.forEach(id=>toggleRowChecked(id,e.target.checked));
+  render();
+};
+
+/* ================= 详情抽屉 ================= */
+let currentId=null;
+function openDetail(id){
+  currentId=id;
+  const r=RECORDS.find(x=>x.id===id);
+  if(!r)return;
+  const rt=RISK_TYPES[r.type];
+  const isCustomer=r.acctType==="customer";
+  $("detailStatusTag").innerHTML=r.status==="pending"
+    ?'<span class="status-tag st-pending">未处理</span>'
+    :'<span class="status-tag st-done">已处理</span>';
+
+  // 私聊上下文
+  const otherAva=isCustomer
+    ?'<div class="chat-ava ava-teacher">师</div>'
+    :'<div class="chat-ava ava-customer">客</div>';
+  const otherName=isCustomer?"投资顾问 · "+(r.ctx?"":"服务老师"):"客户";
+  let ctxHtml="";
+  if(r.ctx){
+    ctxHtml+='<div class="chat-line">'+otherAva+
+      '<div><div class="chat-who">'+esc(isCustomer?"老师":"客户")+'<span>'+r.time.slice(0,10)+' '+(parseInt(r.time.slice(11))>=12?"下午":"上午")+'</span></div>'+
+      '<div class="chat-bubble">'+esc(r.ctx)+'</div></div></div>';
+  }
+  const flag=isCustomer
+    ?'<span class="msg-flag">⚠ 触发敏感词 · 已标记并推送预警</span>'
+    :'<span class="msg-flag">⛔ 触发敏感词 · 已拦截</span>';
+  const stateNote=isCustomer
+    ?'<div class="msg-sent-note">▸ 客户消息已正常送达，系统自动标记风险并推送预警至业务负责人</div>'
+    :'<div class="msg-blocked-note">⛔ 员工消息触发敏感词，已拦截未送达；系统推送预警至业务负责人</div>';
+  ctxHtml+='<div class="chat-line">'+
+    '<div class="chat-ava '+(isCustomer?"ava-customer":"ava-staff")+'">'+esc(r.acct.name[0])+'</div>'+
+    '<div><div class="chat-who">'+esc(r.acct.name)+'（'+(isCustomer?"客户":"员工 · "+r.acct.dept)+'）<span>'+fmtHM(r.time)+'</span></div>'+
+    '<div class="chat-bubble">'+fmtContent(r.content)+flag+stateNote+'</div></div></div>';
+
+  // 处理区
+  let handleHtml="";
+  if(r.status==="pending"){
+    handleHtml='<div class="handle-box">'+
+      '<div class="handle-note-label">处理备注</div>'+
+      '<textarea class="textarea" id="handleRemark" placeholder="请填写处理措施，如：已电话核实客户诉求 / 已约谈员工整改话术等"></textarea>'+
+    '</div>';
+  }else{
+    handleHtml='<div class="handle-box done-box">'+
+      '<div class="kv-row"><span class="k">处理人</span><span class="v">'+esc(r.handler||"")+'</span></div>'+
+      '<div class="kv-row"><span class="k">处理时间</span><span class="v">'+(r.handleTime||"")+'</span></div>'+
+      '<div class="kv-row" style="margin-bottom:0;"><span class="k">处理备注</span><span class="v">'+esc(r.remark||"")+'</span></div>'+
+    '</div>';
+  }
+
+  // 日志
+  const logHtml=r.logs.map(l=>
+    '<div class="log-item"><div class="log-dot '+l.kind+'"></div><div>'+
+    '<div class="log-main"><span class="op-actor">'+esc(l.who)+'</span>　'+esc(l.act)+'</div>'+
+    '<div class="log-time">'+l.t+'</div></div></div>'
+  ).join("");
+
+  $("drawerBody").innerHTML=
+    '<div class="sec"><div class="sec-title">账号信息</div><div class="info-grid">'+
+      '<div class="info-item"><span class="k">账号类型</span><span class="v">'+(isCustomer?'<span class="acct-type-tag acct-customer">客户</span>':'<span class="acct-type-tag acct-staff">员工</span>')+'</span></div>'+
+      '<div class="info-item"><span class="k">账号ID</span><span class="v">'+esc(r.acct.id)+'</span></div>'+
+      (isCustomer?'':'<div class="info-item"><span class="k">所属部门</span><span class="v">'+esc(r.acct.dept)+'</span></div>')+
+      '<div class="info-item"><span class="k">触发场景</span><span class="v">私聊（'+(isCustomer?"客户 → 老师":"员工 → 客户")+'）</span></div>'+
+    '</div></div>'+
+    '<div class="sec"><div class="sec-title">私聊上下文</div>'+
+      '<div class="chat-box"><div class="chat-meta"><span>私聊会话记录</span><span>触发时间：'+r.time+'</span></div>'+ctxHtml+'</div>'+
+    '</div>'+
+    '<div class="sec"><div class="sec-title">风险识别</div>'+
+      '<div class="kv-row"><span class="k">命中敏感词</span><span class="v"><span class="hit-word">'+esc(r.word)+'</span></span></div>'+
+      '<div class="kv-row" style="margin-bottom:0;"><span class="k">风险类型</span><span class="v"><span class="risk-type-tag '+rt.cls+'">'+rt.label+'</span></span></div>'+
+    '</div>'+
+    '<div class="sec" style="margin-bottom:0;"><div class="sec-title">'+(r.status==="pending"?"处理":"处理结果")+'</div>'+handleHtml+'</div>';
+
+  $("drawerFoot").innerHTML=r.status==="pending"
+    ?'<button class="btn" onclick="closeDrawer()">取消</button><button class="btn btn-primary" onclick="submitHandle()">标记已处理</button>'
+    :'<button class="btn" onclick="closeDrawer()">关闭</button>';
+  $("mask").classList.add("show");
+  $("drawer").classList.add("show");
+}
+function submitHandle(){
+  const r=RECORDS.find(x=>x.id===currentId);
+  if(!r)return;
+  const remark=($("handleRemark")&&$("handleRemark").value.trim())||"";
+  r.status="done";r.handler="周敏";
+  r.handleTime="2026-11-18 "+new Date().toTimeString().slice(0,5);
+  r.remark=remark||"已核实并按规范处理完毕。";
+  r.logs.push({t:r.handleTime+":00",who:"周敏",act:"核实后将该提醒标记为已处理"+(remark?"":"（无备注）"),kind:"done"});
+  toast("已标记为已处理");
+  closeDrawer();
+  render();
+}
+function closeDrawer(){
+  $("mask").classList.remove("show");
+  $("drawer").classList.remove("show");
+  currentId=null;
+}
+
+/* ================= 日志弹窗 ================= */
+function openLog(id){
+  const r=RECORDS.find(x=>x.id===id);
+  if(!r)return;
+  const logHtml=r.logs.map(l=>
+    '<div class="log-item"><div class="log-dot '+l.kind+'"></div><div>'+
+    '<div class="log-main"><span class="op-actor">'+esc(l.who)+'</span>　'+esc(l.act)+'</div>'+
+    '<div class="log-time">'+l.t+'</div></div></div>'
+  ).join("");
+  $("logModalBody").innerHTML='<div class="sec" style="margin-bottom:0;"><div class="sec-title">提醒编号 '+r.id+'</div><div class="log-list">'+logHtml+'</div></div>';
+  $("mask").classList.add("show");
+  $("logModal").classList.add("show");
+}
+function closeLogModal(){
+  $("mask").classList.remove("show");
+  $("logModal").classList.remove("show");
+}
+
+/* ================= 事件绑定 ================= */
+$("queryBtn").onclick=()=>{
+  state.dateStart=$("dateStart").value;
+  state.dateEnd=$("dateEnd").value;
+  state.acctType=$("filterAcctType").value;
+  state.status=$("filterStatus").value;
+  state.page=1;render();toast("查询完成",false);
+};
+$("resetBtn").onclick=()=>{
+  state={dateStart:"",dateEnd:"",acctType:"",status:"",page:1,pageSize:state.pageSize};
+  $("dateStart").value="";$("dateEnd").value="";
+  $("filterAcctType").value="";$("filterStatus").value="";
+  render();
+};
+$("pageSizeSel").onchange=e=>{state.pageSize=parseInt(e.target.value);state.page=1;render();};
+/* 导出菜单 */
+const exportMenu=$("exportMenu");
+$("exportBtn").onclick=e=>{
+  e.stopPropagation();
+  syncExport();
+  exportMenu.classList.toggle("show");
+};
+document.addEventListener("click",e=>{
+  if(exportMenu.classList.contains("show")&&!exportMenu.contains(e.target))exportMenu.classList.remove("show");
+});
+$("exportAllItem").onclick=()=>{
+  const n=filtered().length;
+  exportMenu.classList.remove("show");
+  if(n===0){toast("当前筛选结果为空，无可导出数据",false);return;}
+  toast("导出成功：风险提醒列表（全部筛选结果 "+n+" 条）.xlsx");
+};
+$("exportSelItem").onclick=()=>{
+  if(selected.size===0){toast("请先勾选需要导出的记录",false);return;}
+  exportMenu.classList.remove("show");
+  toast("导出成功：风险提醒列表（选中 "+selected.size+" 条）.xlsx");
+};
+$("drawerClose").onclick=closeDrawer;
+$("mask").onclick=()=>{closeDrawer();closeLogModal();};
+$("bellBtn").onclick=()=>{
+  state.status="pending";state.page=1;
+  $("filterStatus").value="pending";
+  render();
+  toast("已筛选未处理预警 "+RECORDS.filter(r=>r.status==="pending").length+" 条",false);
+};
+
+render();
+</script>
+</body>
+</html>
