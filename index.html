@@ -355,6 +355,18 @@
   .del-confirm b{color:var(--danger);}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .btn:disabled:hover{color:var(--text-2);border-color:var(--border);}
+  /* ===== 风险类别管理 ===== */
+  .cat-desc{color:var(--text-2);font-size:13px;line-height:1.5;max-width:300px;}
+  .cat-count{color:var(--text-1);font-size:13px;}
+  .cat-count.link{color:var(--primary);cursor:pointer;}
+  .cat-count.link:hover{text-decoration:underline;}
+  .cat-colors{display:flex;align-items:center;gap:10px;height:34px;flex-wrap:wrap;}
+  .cat-color{
+    width:28px;height:28px;border-radius:6px;cursor:pointer;border:2px solid transparent;
+    display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:14px;
+  }
+  .cat-color.on{border-color:var(--text-2);}
+  .cat-color-tip{font-size:12px;color:var(--text-3);margin-top:6px;line-height:1.6;}
 </style>
 </head>
 <body>
@@ -394,6 +406,7 @@
       <div class="nav-group">风险管理</div>
       <div class="nav-item active" id="navRisk" onclick="switchPage('risk')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2.5 20h19L12 3z"/><path d="M12 10v4"/><path d="M12 17.2v.1"/></svg>风险提醒</div>
       <div class="nav-item" id="navWords" onclick="switchPage('words')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>敏感词管理</div>
+      <div class="nav-item" id="navCats" onclick="switchPage('cats')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0l-7.2-7.2A2 2 0 0 1 3 12V5a2 2 0 0 1 2-2h7a2 2 0 0 1 1.4.6l7.2 7.2a2 2 0 0 1 0 2.6z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg>风险类别管理</div>
       <div class="nav-group">系统管理</div>
       <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>系统设置</div>
     </div>
@@ -547,7 +560,51 @@
             <div class="pager-info">共 <span id="wordTotalNum">0</span> 条</div>
           </div>
         </div>
-      </div>
+      </div><!-- /pageWords -->
+
+      <!-- 风险类别管理 -->
+      <div id="pageCats" style="display:none;">
+        <div class="page-card">
+          <div class="page-head">
+            <div class="page-title">风险类别管理</div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-primary" onclick="openCatEdit()">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                添加
+              </button>
+            </div>
+          </div>
+
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span class="filter-label">类别名称</span>
+              <input type="text" class="inp" id="cKeyword" placeholder="请输入类别名称">
+            </div>
+            <div class="filter-actions">
+              <button class="btn btn-primary" id="cQueryBtn">查询</button>
+              <button class="btn" id="cResetBtn">重置</button>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width:180px;">风险类别</th>
+                <th>类别说明</th>
+                <th style="width:140px;">关联敏感词数</th>
+                <th style="width:180px;">创建时间</th>
+                <th style="width:160px;">创建人</th>
+                <th style="width:130px;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="catTableBody"></tbody>
+          </table>
+
+          <div class="pager">
+            <div class="pager-info">共 <span id="catTotalNum">0</span> 条</div>
+          </div>
+        </div>
+      </div><!-- /pageCats -->
     </div>
   </div>
 </div>
@@ -628,8 +685,8 @@
           </tbody>
         </table>
       </div>
-      <div class="form-tip">
-        模板字段仅含「敏感词」「类别」两列；类别须填写风险类别名称：违规荐股 / 承诺收益 / 联系方式诱导 / 资金往来诱导 / 不当言论。模板为 CSV 格式，Excel 可直接打开编辑并另存为 CSV 上传。
+      <div class="form-tip" id="catNameTip">
+        模板字段仅含「敏感词」「类别」两列；类别须填写风险类别名称：<span id="catNameList"></span>。模板为 CSV 格式，Excel 可直接打开编辑并另存为 CSV 上传。
       </div>
       <button class="btn" onclick="downloadTemplate()">下载模板</button>
       <div class="upload-zone">
@@ -661,18 +718,94 @@
   </div>
 </div>
 
+<!-- 风险类别 添加/编辑 弹窗 -->
+<div class="modal2" id="catEditModal" onclick="if(event.target===this)closeCatEdit()">
+  <div class="modal-card" style="width:480px;">
+    <div class="drawer-head">
+      <div class="drawer-title" id="catEditTitle">添加风险类别</div>
+      <button class="drawer-close" onclick="closeCatEdit()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="form-row">
+        <div class="form-label"><i>*</i>类别名称</div>
+        <div style="flex:1;">
+          <input class="form-inp" id="catName" placeholder="请输入类别名称" maxlength="12">
+          <div class="form-tip">类别名称须唯一，且与批量导入模板「类别」列取值一致。</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-label">类别说明</div>
+        <div style="flex:1;"><input class="form-inp" id="catDesc" placeholder="请输入类别说明" maxlength="40"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-label"><i>*</i>标签颜色</div>
+        <div style="flex:1;">
+          <div class="cat-colors" id="catColorPick"></div>
+          <div class="cat-color-tip">用于风险类别标签在敏感词管理与风险提醒中的展示。</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeCatEdit()">取消</button>
+      <button class="btn btn-primary" onclick="saveCat()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 风险类别 删除确认 弹窗 -->
+<div class="modal2" id="catDeleteModal" onclick="if(event.target===this)closeCatDelete()">
+  <div class="modal-card" style="width:420px;">
+    <div class="drawer-head">
+      <div class="drawer-title">删除确认</div>
+      <button class="drawer-close" onclick="closeCatDelete()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="del-confirm" id="catDeleteText"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeCatDelete()">取消</button>
+      <button class="btn btn-primary" id="catDeleteConfirmBtn" onclick="confirmDeleteCat()">确认删除</button>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"><span class="t-ico ok" id="toastIco">✓</span><span id="toastText"></span></div>
 
 <script>
+const $=id=>document.getElementById(id);
 /* ================= 模拟数据 ================= */
-const RISK_TYPES = {
-  recommend:{label:"违规荐股",cls:"rt-recommend"},
-  promise:{label:"承诺收益",cls:"rt-promise"},
-  contact:{label:"联系方式诱导",cls:"rt-contact"},
-  fund:{label:"资金往来诱导",cls:"rt-fund"},
-  speech:{label:"不当言论",cls:"rt-speech"}
-};
+/* 风险类别为可维护数据；风险类型标签、敏感词归类、批量导入校验均由此派生 */
+const CATEGORIES = [
+  {key:"recommend",label:"违规荐股",cls:"rt-recommend",desc:"涉及推荐个股、引导跟单买卖等表述",time:"2026-04-08 10:12:31",creator:"股海通管理员02"},
+  {key:"promise",label:"承诺收益",cls:"rt-promise",desc:"涉及保本、稳赚、翻倍等收益承诺表述",time:"2026-04-08 10:14:05",creator:"股海通管理员02"},
+  {key:"contact",label:"联系方式诱导",cls:"rt-contact",desc:"涉及引导添加微信、QQ 等站外联系方式",time:"2026-04-08 10:15:42",creator:"股海通管理员02"},
+  {key:"fund",label:"资金往来诱导",cls:"rt-fund",desc:"涉及私下转账、代客理财、借钱炒股等资金往来",time:"2026-04-08 10:17:20",creator:"股海通管理员02"},
+  {key:"speech",label:"不当言论",cls:"rt-speech",desc:"涉及退费、举报、投诉等争议表述",time:"2026-04-08 10:19:08",creator:"股海通管理员02"}
+];
+/* 类别标签可选配色，与风险类型标签样式一致 */
+const CAT_COLORS = [
+  {cls:"rt-recommend",hex:"#8847d1",name:"紫色"},
+  {cls:"rt-promise",hex:"#e37318",name:"橙色"},
+  {cls:"rt-contact",hex:"#0a7ee0",name:"蓝色"},
+  {cls:"rt-fund",hex:"#c25790",name:"洋红"},
+  {cls:"rt-speech",hex:"#5a616a",name:"灰色"}
+];
+const RISK_TYPES = {};
+let CAT_OPTIONS = [], CAT_BY_LABEL = {};
+/* 类别变更后重建派生索引并刷新所有引用处，保证口径一致 */
+function syncCatIndex(){
+  for(const k in RISK_TYPES) delete RISK_TYPES[k];
+  CAT_OPTIONS = []; CAT_BY_LABEL = {};
+  CATEGORIES.forEach(c=>{
+    RISK_TYPES[c.key] = {label:c.label,cls:c.cls};
+    CAT_OPTIONS.push({value:c.key,label:c.label});
+    CAT_BY_LABEL[c.label] = c.key;
+  });
+  if(document.getElementById('wCategory')) fillCatSelects();
+  if(document.getElementById('catNameTip')) updateCatHints();
+}
+syncCatIndex();
 
 const CUSTOMERS = [
   {name:"陈志强",id:"GHT2026090112",phone:"138****2381",dept:"-"},
@@ -778,7 +911,6 @@ let RECORDS = makeRecords();
 let state={dateStart:"",dateEnd:"",acctType:"",status:"",page:1,pageSize:30};
 
 /* ================= 工具 ================= */
-const $=id=>document.getElementById(id);
 function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function fmtHM(t){
   const p=t.split(" ")[1]||"";
@@ -1075,15 +1207,16 @@ render();
 function switchPage(p){
   $('pageRisk').style.display=p==='risk'?'':'none';
   $('pageWords').style.display=p==='words'?'':'none';
+  $('pageCats').style.display=p==='cats'?'':'none';
   $('navRisk').classList.toggle('active',p==='risk');
   $('navWords').classList.toggle('active',p==='words');
+  $('navCats').classList.toggle('active',p==='cats');
   document.querySelector('.content').scrollTop=0;
   if(p==='words')renderWords();
+  if(p==='cats')renderCats();
 }
 
 /* ================= 敏感词管理 ================= */
-const CAT_OPTIONS=Object.keys(RISK_TYPES).map(k=>({value:k,label:RISK_TYPES[k].label}));
-const CAT_BY_LABEL={};CAT_OPTIONS.forEach(c=>CAT_BY_LABEL[c.label]=c.value);
 let wordSeq=100;
 function nowStr(){
   const d=new Date(),p=n=>String(n).padStart(2,'0');
@@ -1180,8 +1313,14 @@ function openImport(){
   showM('importModal');
 }
 function closeImport(){hideM('importModal');}
+function updateCatHints(){
+  const names=CATEGORIES.map(c=>c.label).join(' / ');
+  $('catNameList').textContent=names;
+}
 function downloadTemplate(){
-  const rows=[['敏感词','类别'],['稳赚不赔','承诺收益'],['加微信','联系方式诱导']];
+  const c1=CATEGORIES[1]?CATEGORIES[1].label:(CATEGORIES[0]?CATEGORIES[0].label:'');
+  const c2=CATEGORIES[2]?CATEGORIES[2].label:(CATEGORIES[0]?CATEGORIES[0].label:'');
+  const rows=[['敏感词','类别'],['稳赚不赔',c1],['加微信',c2]];
   const csv='\ufeff'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const a=document.createElement('a');
@@ -1252,6 +1391,100 @@ $('wResetBtn').onclick=()=>{
   renderWords();
 };
 fillCatSelects();
+
+/* ================= 风险类别管理 ================= */
+function catWordCount(key){return WORDS.filter(w=>w.cat===key).length;}
+function catRecordCount(key){return RECORDS.filter(r=>r.type===key).length;}
+function catFiltered(){
+  const kw=($('cKeyword').value||'').trim();
+  return CATEGORIES.filter(c=>!kw||c.label.indexOf(kw)>=0);
+}
+function renderCats(){
+  const list=catFiltered();
+  $('catTotalNum').textContent=list.length;
+  const tb=$('catTableBody');
+  if(!list.length){tb.innerHTML='<tr class="empty-row"><td colspan="6">暂无符合条件的数据</td></tr>';return;}
+  tb.innerHTML=list.map(c=>{
+    const n=catWordCount(c.key);
+    const cnt=n>0
+      ?'<span class="cat-count link" onclick="gotoCatWords(\''+c.key+'\')" title="查看该类别下的敏感词">'+n+' 条</span>'
+      :'<span class="cat-count">0 条</span>';
+    return '<tr>'+
+      '<td><span class="risk-type-tag '+c.cls+'">'+esc(c.label)+'</span></td>'+
+      '<td><div class="cat-desc">'+esc(c.desc||'—')+'</div></td>'+
+      '<td>'+cnt+'</td>'+
+      '<td style="color:var(--text-2);font-size:12px;white-space:nowrap;">'+esc(c.time)+'</td>'+
+      '<td>'+esc(c.creator)+'</td>'+
+      '<td class="op-cell"><button class="link-btn" onclick="openCatEdit(\''+c.key+'\')">编辑</button><button class="link-btn" style="color:var(--danger);" onclick="askDeleteCat(\''+c.key+'\')">删除</button></td>'+
+    '</tr>';
+  }).join('');
+}
+/* 点击关联敏感词数，跳转敏感词管理并按该类别筛选 */
+function gotoCatWords(key){
+  switchPage('words');
+  $('wDateStart').value='';$('wDateEnd').value='';$('wKeyword').value='';
+  $('wCategory').value=key;
+  renderWords();
+}
+
+let editingCatKey=null, pickedCls=CAT_COLORS[0].cls;
+function renderColorPick(){
+  $('catColorPick').innerHTML=CAT_COLORS.map(o=>
+    '<span class="cat-color'+(pickedCls===o.cls?' on':'')+'" style="background:'+o.hex+'" title="'+o.name+'" onclick="pickCls(\''+o.cls+'\')">'+(pickedCls===o.cls?'✓':'')+'</span>'
+  ).join('');
+}
+function pickCls(cls){pickedCls=cls;renderColorPick();}
+function openCatEdit(key){
+  editingCatKey=key||null;
+  const c=key?CATEGORIES.find(x=>x.key===key):null;
+  $('catEditTitle').textContent=c?'编辑风险类别':'添加风险类别';
+  $('catName').value=c?c.label:'';
+  $('catDesc').value=c?c.desc:'';
+  pickedCls=c?c.cls:CAT_COLORS[0].cls;
+  renderColorPick();
+  showM('catEditModal');
+}
+function closeCatEdit(){hideM('catEditModal');editingCatKey=null;}
+function saveCat(){
+  const name=$('catName').value.trim(),desc=$('catDesc').value.trim();
+  if(!name){toast('请输入类别名称',false);return;}
+  if(CATEGORIES.some(c=>c.label===name&&c.key!==editingCatKey)){toast('类别名称「'+name+'」已存在',false);return;}
+  if(editingCatKey){
+    const c=CATEGORIES.find(x=>x.key===editingCatKey);
+    c.label=name;c.desc=desc;c.cls=pickedCls;
+    toast('已保存修改');
+  }else{
+    CATEGORIES.push({key:'cat'+Date.now(),label:name,cls:pickedCls,desc:desc,time:nowStr(),creator:'周敏'});
+    toast('添加成功');
+  }
+  syncCatIndex();
+  closeCatEdit();renderCats();
+}
+/* 删除校验：已被敏感词或风险提醒引用的类别不允许删除，避免产生孤儿数据 */
+let deletingCatKey=null;
+function askDeleteCat(key){
+  deletingCatKey=key;
+  const c=CATEGORIES.find(x=>x.key===key);
+  const nw=catWordCount(key),nr=catRecordCount(key);
+  const blocked=nw>0||nr>0;
+  $('catDeleteText').innerHTML=blocked
+    ?'风险类别 <b>'+esc(c.label)+'</b> 已被 '+nw+' 条敏感词、'+nr+' 条风险提醒引用，不可删除。请先在敏感词管理中调整所属类别后再删除。'
+    :'确认删除风险类别 <b>'+esc(c.label)+'</b> 吗？删除后该类别不再出现在敏感词归类与风险类型中。';
+  $('catDeleteConfirmBtn').disabled=blocked;
+  showM('catDeleteModal');
+}
+function closeCatDelete(){hideM('catDeleteModal');deletingCatKey=null;}
+function confirmDeleteCat(){
+  if($('catDeleteConfirmBtn').disabled)return;
+  const i=CATEGORIES.findIndex(x=>x.key===deletingCatKey);
+  if(i>=0)CATEGORIES.splice(i,1);
+  syncCatIndex();
+  closeCatDelete();renderCats();toast('已删除');
+}
+
+$('cQueryBtn').onclick=()=>{renderCats();toast('查询完成',false);};
+$('cResetBtn').onclick=()=>{$('cKeyword').value='';renderCats();};
+updateCatHints();
 </script>
 </body>
 </html>
