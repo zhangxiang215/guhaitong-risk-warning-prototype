@@ -310,6 +310,45 @@
   ::-webkit-scrollbar{width:8px;height:8px;}
   ::-webkit-scrollbar-thumb{background:#d3d8e0;border-radius:4px;}
   ::-webkit-scrollbar-track{background:transparent;}
+  /* ===== 敏感词管理 / 表单弹窗 ===== */
+  .modal2{
+    position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;
+    background:rgba(24,25,28,.45);opacity:0;pointer-events:none;transition:opacity .2s;
+  }
+  .modal2.show{opacity:1;pointer-events:auto;}
+  .modal2 .modal-card{max-height:90vh;}
+  .modal-foot{
+    padding:14px 20px;border-top:1px solid var(--border);
+    display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;
+  }
+  .form-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;}
+  .form-row:last-child{margin-bottom:0;}
+  .form-label{width:88px;text-align:right;color:var(--text-2);font-size:13px;flex-shrink:0;line-height:34px;}
+  .form-label i{color:var(--danger);font-style:normal;margin-right:2px;}
+  .form-inp{
+    width:100%;height:34px;border:1px solid var(--border);border-radius:6px;padding:0 10px;
+    font-size:13px;font-family:inherit;outline:none;color:var(--text-1);background:#fff;
+  }
+  .form-inp:focus{border-color:var(--primary);}
+  .form-tip{font-size:12px;color:var(--text-3);margin-top:6px;line-height:1.6;}
+  .import-steps{font-size:13px;color:var(--text-2);line-height:1.7;}
+  .import-steps b{color:var(--text-1);font-weight:600;}
+  .tpl-table{margin:10px 0;border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+  .tpl-table table{width:100%;border-collapse:collapse;}
+  .tpl-table thead th{background:#f7f8fa;}
+  .tpl-table tbody td,.tpl-table thead th{padding:6px 14px;font-size:13px;}
+  .upload-zone{
+    border:1px dashed #c9d2de;border-radius:8px;background:#fafbfc;
+    padding:12px;text-align:center;margin-top:10px;
+  }
+  .upload-zone input[type=file]{font-size:13px;color:var(--text-2);}
+  .import-result{font-size:13px;margin-top:12px;line-height:1.8;}
+  .import-result .ok{color:var(--success);}
+  .import-result .err{color:var(--danger);}
+  .del-confirm{font-size:14px;color:var(--text-1);line-height:1.8;}
+  .del-confirm b{color:var(--danger);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn:disabled:hover{color:var(--text-2);border-color:var(--border);}
 </style>
 </head>
 <body>
@@ -347,14 +386,15 @@
       <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5"/></svg>圈子管理</div>
       <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>内容模版管理</div>
       <div class="nav-group">风险管理</div>
-      <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2.5 20h19L12 3z"/><path d="M12 10v4"/><path d="M12 17.2v.1"/></svg>风险提醒</div>
-      <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>敏感词库</div>
+      <div class="nav-item active" id="navRisk" onclick="switchPage('risk')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2.5 20h19L12 3z"/><path d="M12 10v4"/><path d="M12 17.2v.1"/></svg>风险提醒</div>
+      <div class="nav-item" id="navWords" onclick="switchPage('words')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>敏感词管理</div>
       <div class="nav-group">系统管理</div>
       <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>系统设置</div>
     </div>
 
     <!-- 内容区 -->
     <div class="content">
+      <div id="pageRisk">
       <div class="page-card">
         <div class="page-head">
           <div class="page-title">
@@ -444,6 +484,64 @@
           <div class="pager-pages" id="pagerPages"></div>
         </div>
       </div>
+      </div><!-- /pageRisk -->
+
+      <!-- 敏感词管理 -->
+      <div id="pageWords" style="display:none;">
+        <div class="page-card">
+          <div class="page-head">
+            <div class="page-title">敏感词管理</div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-primary" onclick="openWordEdit()">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                添加
+              </button>
+              <button class="btn" onclick="openImport()">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
+                批量导入
+              </button>
+            </div>
+          </div>
+
+          <div class="filter-bar">
+            <div class="filter-item">
+              <span class="filter-label">创建时间</span>
+              <input type="date" class="inp" id="wDateStart">
+              <span class="date-sep">至</span>
+              <input type="date" class="inp" id="wDateEnd">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">敏感词名称</span>
+              <input type="text" class="inp" id="wKeyword" placeholder="请输入敏感词">
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">风险类别</span>
+              <select class="sel" id="wCategory"><option value="">全部</option></select>
+            </div>
+            <div class="filter-actions">
+              <button class="btn btn-primary" id="wQueryBtn">查询</button>
+              <button class="btn" id="wResetBtn">重置</button>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width:220px;">敏感词名称</th>
+                <th>风险类别</th>
+                <th style="width:180px;">创建时间</th>
+                <th style="width:160px;">创建人</th>
+                <th style="width:130px;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="wordTableBody"></tbody>
+          </table>
+
+          <div class="pager">
+            <div class="pager-info">共 <span id="wordTotalNum">0</span> 条</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -472,6 +570,88 @@
       <button class="drawer-close" onclick="closeLogModal()">✕</button>
     </div>
     <div class="drawer-body" id="logModalBody"></div>
+  </div>
+</div>
+
+<!-- 敏感词 添加/编辑 弹窗 -->
+<div class="modal2" id="wordEditModal" onclick="if(event.target===this)closeWordEdit()">
+  <div class="modal-card" style="width:480px;">
+    <div class="drawer-head">
+      <div class="drawer-title" id="wordEditTitle">添加敏感词</div>
+      <button class="drawer-close" onclick="closeWordEdit()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="form-row">
+        <div class="form-label"><i>*</i>敏感词名称</div>
+        <div style="flex:1;"><input class="form-inp" id="wordName" placeholder="请输入敏感词名称"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-label"><i>*</i>风险类别</div>
+        <div style="flex:1;">
+          <select class="form-inp" id="wordCat"><option value="">请选择</option></select>
+          <div class="form-tip">风险类别决定触发时的处置规则，并与风险提醒中的风险类型对应。</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeWordEdit()">取消</button>
+      <button class="btn btn-primary" onclick="saveWord()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 批量导入 弹窗 -->
+<div class="modal2" id="importModal" onclick="if(event.target===this)closeImport()">
+  <div class="modal-card" style="width:600px;">
+    <div class="drawer-head">
+      <div class="drawer-title">批量导入敏感词</div>
+      <button class="drawer-close" onclick="closeImport()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="import-steps">
+        <b>1</b> 下载模板，按模板字段填写敏感词与类别<br>
+        <b>2</b> 上传填写后的模板文件<br>
+        <b>3</b> 校验通过后确认导入
+      </div>
+      <div class="tpl-table">
+        <table>
+          <thead><tr><th>敏感词</th><th>类别</th></tr></thead>
+          <tbody>
+            <tr><td>稳赚不赔</td><td>承诺收益</td></tr>
+            <tr><td>加微信</td><td>联系方式诱导</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="form-tip">
+        模板字段仅含「敏感词」「类别」两列；类别须填写风险类别名称：违规荐股 / 承诺收益 / 联系方式诱导 / 资金往来诱导 / 不当言论。模板为 CSV 格式，Excel 可直接打开编辑并另存为 CSV 上传。
+      </div>
+      <button class="btn" onclick="downloadTemplate()">下载模板</button>
+      <div class="upload-zone">
+        <input type="file" id="importFile" accept=".csv,.txt" onchange="handleImportFile(this)">
+      </div>
+      <div class="import-result" id="importResult"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeImport()">取消</button>
+      <button class="btn btn-primary" id="importConfirmBtn" onclick="confirmImport()" disabled>确认导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 删除确认 弹窗 -->
+<div class="modal2" id="deleteModal" onclick="if(event.target===this)closeDelete()">
+  <div class="modal-card" style="width:400px;">
+    <div class="drawer-head">
+      <div class="drawer-title">删除确认</div>
+      <button class="drawer-close" onclick="closeDelete()">✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="del-confirm">确认删除敏感词 <b id="deleteWordName"></b> 吗？删除后该词不再参与私聊内容风险识别。</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeDelete()">取消</button>
+      <button class="btn btn-primary" onclick="confirmDelete()">确认删除</button>
+    </div>
   </div>
 </div>
 
@@ -876,6 +1056,7 @@ $("exportSelItem").onclick=()=>{
 $("drawerClose").onclick=closeDrawer;
 $("mask").onclick=()=>{closeDrawer();closeLogModal();};
 $("bellBtn").onclick=()=>{
+  switchPage("risk");
   state.status="pending";state.page=1;
   $("filterStatus").value="pending";
   render();
@@ -883,6 +1064,188 @@ $("bellBtn").onclick=()=>{
 };
 
 render();
+
+/* ================= 页面切换 ================= */
+function switchPage(p){
+  $('pageRisk').style.display=p==='risk'?'':'none';
+  $('pageWords').style.display=p==='words'?'':'none';
+  $('navRisk').classList.toggle('active',p==='risk');
+  $('navWords').classList.toggle('active',p==='words');
+  document.querySelector('.content').scrollTop=0;
+  if(p==='words')renderWords();
+}
+
+/* ================= 敏感词管理 ================= */
+const CAT_OPTIONS=Object.keys(RISK_TYPES).map(k=>({value:k,label:RISK_TYPES[k].label}));
+const CAT_BY_LABEL={};CAT_OPTIONS.forEach(c=>CAT_BY_LABEL[c.label]=c.value);
+let wordSeq=100;
+function nowStr(){
+  const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+}
+const WORDS=(()=>{
+  const base=[
+    {word:'手机号',cat:'contact',time:'2026-06-10 09:09:31',creator:'股海通管理员02'},
+    {word:'QQ',cat:'contact',time:'2026-06-10 09:09:23',creator:'股海通管理员02'},
+    {word:'微信',cat:'contact',time:'2026-04-25 15:12:01',creator:'股海通管理员02'}
+  ];
+  const seen=new Set(base.map(x=>x.word)),extra=[];
+  [...CUSTOM_MSGS,...STAFF_MSGS].forEach(m=>{
+    if(!seen.has(m.word)){
+      seen.add(m.word);
+      extra.push({word:m.word,cat:m.type,time:'2026-10-08 14:2'+String(extra.length%10)+':06',creator:'股海通管理员02'});
+    }
+  });
+  return base.concat(extra).map(w=>Object.assign({id:++wordSeq},w)).sort((a,b)=>b.time.localeCompare(a.time));
+})();
+function fillCatSelects(){
+  $('wCategory').innerHTML='<option value="">全部</option>'+CAT_OPTIONS.map(c=>'<option value="'+c.value+'">'+c.label+'</option>').join('');
+  $('wordCat').innerHTML='<option value="">请选择</option>'+CAT_OPTIONS.map(c=>'<option value="'+c.value+'">'+c.label+'</option>').join('');
+}
+function wordFiltered(){
+  const ds=$('wDateStart').value,de=$('wDateEnd').value,kw=($('wKeyword').value||'').trim(),cat=$('wCategory').value;
+  return WORDS.filter(w=>(!ds||w.time.slice(0,10)>=ds)&&(!de||w.time.slice(0,10)<=de)&&(!kw||w.word.indexOf(kw)>=0)&&(!cat||w.cat===cat));
+}
+function renderWords(){
+  const list=wordFiltered();
+  $('wordTotalNum').textContent=list.length;
+  const tb=$('wordTableBody');
+  if(!list.length){tb.innerHTML='<tr class="empty-row"><td colspan="5">暂无符合条件的数据</td></tr>';return;}
+  tb.innerHTML=list.map(w=>{
+    const rt=RISK_TYPES[w.cat];
+    return '<tr>'+
+      '<td><span class="hit-word">'+esc(w.word)+'</span></td>'+
+      '<td><span class="risk-type-tag '+rt.cls+'">'+rt.label+'</span></td>'+
+      '<td style="color:var(--text-2);font-size:12px;white-space:nowrap;">'+w.time+'</td>'+
+      '<td>'+esc(w.creator)+'</td>'+
+      '<td class="op-cell"><button class="link-btn" onclick="openWordEdit('+w.id+')">编辑</button><button class="link-btn" style="color:var(--danger);" onclick="askDeleteWord('+w.id+')">删除</button></td>'+
+    '</tr>';
+  }).join('');
+}
+function showM(id){$(id).classList.add('show');}
+function hideM(id){$(id).classList.remove('show');}
+
+let editingWordId=null;
+function openWordEdit(id){
+  editingWordId=id||null;
+  const w=id?WORDS.find(x=>x.id===id):null;
+  $('wordEditTitle').textContent=w?'编辑敏感词':'添加敏感词';
+  $('wordName').value=w?w.word:'';
+  $('wordCat').value=w?w.cat:'';
+  showM('wordEditModal');
+}
+function closeWordEdit(){hideM('wordEditModal');editingWordId=null;}
+function saveWord(){
+  const name=$('wordName').value.trim(),cat=$('wordCat').value;
+  if(!name){toast('请输入敏感词名称',false);return;}
+  if(!cat){toast('请选择风险类别',false);return;}
+  if(WORDS.some(w=>w.word===name&&w.id!==editingWordId)){toast('敏感词「'+name+'」已存在',false);return;}
+  if(editingWordId){
+    const w=WORDS.find(x=>x.id===editingWordId);
+    w.word=name;w.cat=cat;
+    toast('已保存修改');
+  }else{
+    WORDS.unshift({id:++wordSeq,word:name,cat:cat,time:nowStr(),creator:'周敏'});
+    toast('添加成功');
+  }
+  closeWordEdit();renderWords();
+}
+let deletingWordId=null;
+function askDeleteWord(id){
+  deletingWordId=id;
+  const w=WORDS.find(x=>x.id===id);
+  $('deleteWordName').textContent=w?w.word:'';
+  showM('deleteModal');
+}
+function closeDelete(){hideM('deleteModal');deletingWordId=null;}
+function confirmDelete(){
+  const i=WORDS.findIndex(x=>x.id===deletingWordId);
+  if(i>=0)WORDS.splice(i,1);
+  closeDelete();renderWords();toast('已删除');
+}
+
+/* ================= 批量导入 ================= */
+let importRows=[];
+function openImport(){
+  $('importFile').value='';
+  $('importResult').innerHTML='';
+  $('importConfirmBtn').disabled=true;
+  importRows=[];
+  showM('importModal');
+}
+function closeImport(){hideM('importModal');}
+function downloadTemplate(){
+  const rows=[['敏感词','类别'],['稳赚不赔','承诺收益'],['加微信','联系方式诱导']];
+  const csv='\ufeff'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download='敏感词批量导入模板.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(a.href),0);
+  toast('模板已下载（字段：敏感词、类别）',false);
+}
+function parseCsvLine(line){
+  const out=[];let cur='',q=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){if(q&&line[i+1]==='"'){cur+='"';i++;}else q=!q;}
+    else if(ch===','&&!q){out.push(cur.trim());cur='';}
+    else cur+=ch;
+  }
+  out.push(cur.trim());return out;
+}
+function handleImportFile(input){
+  const f=input.files&&input.files[0];
+  $('importResult').innerHTML='';
+  $('importConfirmBtn').disabled=true;
+  importRows=[];
+  if(!f)return;
+  if(!/\.(csv|txt)$/i.test(f.name)){
+    $('importResult').innerHTML='<span class="err">仅支持 CSV 模板文件；Excel 编辑后请另存为 CSV 再上传。</span>';
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const lines=String(e.target.result).replace(/^\ufeff/,'').split(/\r?\n/).filter(l=>l.trim());
+    const head=parseCsvLine(lines[0]||'');
+    if(head[0]!=='敏感词'||head[1]!=='类别'){
+      $('importResult').innerHTML='<span class="err">模板字段不匹配：首行必须为「敏感词,类别」，请下载模板后按字段填写。</span>';
+      return;
+    }
+    const valid=[],errs=[],dups=[];
+    const exist=new Set(WORDS.map(w=>w.word));
+    lines.slice(1).forEach((l,idx)=>{
+      const c=parseCsvLine(l),name=(c[0]||'').trim(),label=(c[1]||'').trim();
+      if(!name)return;
+      const cat=CAT_BY_LABEL[label];
+      if(!cat){errs.push('第'+(idx+2)+'行「'+name+'」类别「'+label+'」不在风险类别范围内');return;}
+      if(exist.has(name)){dups.push(name);return;}
+      exist.add(name);valid.push({word:name,cat:cat});
+    });
+    importRows=valid;
+    let html='<span class="ok">校验通过 '+valid.length+' 条，可导入。</span>';
+    if(dups.length)html+='<br><span style="color:var(--text-3);">已存在跳过：'+esc(dups.join('、'))+'</span>';
+    if(errs.length)html+='<br><span class="err">'+errs.slice(0,3).map(esc).join('<br>')+(errs.length>3?' 等 '+errs.length+' 条':'')+'</span>';
+    $('importResult').innerHTML=html;
+    $('importConfirmBtn').disabled=valid.length===0;
+  };
+  reader.readAsText(f,'UTF-8');
+}
+function confirmImport(){
+  if(!importRows.length){toast('无可导入的数据',false);return;}
+  const n=importRows.length;
+  importRows.forEach(r=>WORDS.unshift({id:++wordSeq,word:r.word,cat:r.cat,time:nowStr(),creator:'周敏'}));
+  closeImport();renderWords();
+  toast('导入成功：新增 '+n+' 条敏感词');
+}
+
+/* ================= 敏感词页事件 ================= */
+$('wQueryBtn').onclick=()=>{renderWords();toast('查询完成',false);};
+$('wResetBtn').onclick=()=>{
+  $('wDateStart').value='';$('wDateEnd').value='';$('wKeyword').value='';$('wCategory').value='';
+  renderWords();
+};
+fillCatSelects();
 </script>
 </body>
 </html>
