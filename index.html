@@ -142,6 +142,12 @@
     display:inline-block;font-size:12px;color:var(--danger);background:var(--danger-light);
     border:1px solid #f5c2c0;border-radius:4px;padding:1px 8px;margin:2px 4px 2px 0;white-space:nowrap;
   }
+  /* 敏感词管理页：敏感词名称沿用截图样式（描边词条，非标签） */
+  .word-name{
+    display:inline-block;font-size:15px;line-height:1.4;color:#e0564d;background:#fffafa;
+    border:1px solid #f2b9b4;border-radius:8px;padding:7px 16px;white-space:nowrap;
+  }
+  #wordTableBody td{padding:16px 14px;}
   .risk-type-tag{
     display:inline-block;font-size:12px;border-radius:4px;padding:2px 8px;white-space:nowrap;
   }
@@ -1114,7 +1120,7 @@ function renderWords(){
   tb.innerHTML=list.map(w=>{
     const rt=RISK_TYPES[w.cat];
     return '<tr>'+
-      '<td><span class="hit-word">'+esc(w.word)+'</span></td>'+
+      '<td><span class="word-name">'+esc(w.word)+'</span></td>'+
       '<td><span class="risk-type-tag '+rt.cls+'">'+rt.label+'</span></td>'+
       '<td style="color:var(--text-2);font-size:12px;white-space:nowrap;">'+w.time+'</td>'+
       '<td>'+esc(w.creator)+'</td>'+
